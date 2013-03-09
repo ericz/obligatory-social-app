@@ -1,4 +1,3 @@
-
 <div id="wrap">
   <ul id="contacts" class="papercut">
   <!--
@@ -29,9 +28,14 @@
       <br>
       <label for="pre_message">Link to send:</label>
       <input id="pre_message"></input>
-
     </div>
     <a href="/logout" id="logout">Logout</a>
+  </div>
+  <div id="queries">
+    <div class="query" id="filterFavors"><strong>Find:</strong> People I can ask for favors from.</div>
+    <div class="query" id="filterParty"><strong>Find:</strong> People I can invite to my party.</div>
+    <div class="query" id="filterIgnore"><strong>Find:</strong> People who are probably ignoring me.</div>
+    <div class="query" id="filterFriendzone"><strong>Find:</strong> People who have me friendzoned. (Coming soon)</div>
   </div>
 </div>
 
@@ -41,6 +45,49 @@
   $(document).ready(function() {
     var contacts = <%- JSON.stringify(contacts) %>;
     var stime = <%- user.stime %>;
+
+    $('.query').click(function() {
+      $('.filtered').removeClass('filtered');
+      $(this).addClass('filtered');
+      var fn = $(this).attr('id') + '()';
+      eval(fn);
+    });
+
+    function filterFavors() {
+      for (var i = 0, ii = contacts.length; i < ii; i += 1 ) {
+        var contact = contacts[i];
+        if (contact.initiated) {
+          continue;
+        } else if (!contact.last_message || contact.last_message.length < 10) {
+          continue;
+        } else if (!contact.starred && Math.random() > 0.8) {
+          continue;
+        }
+        $('.' + contact._id).addClass('filtered');
+      }
+    };
+    function filterParty() {
+      for (var i = 0, ii = contacts.length; i < ii; i += 1 ) {
+        var contact = contacts[i];
+        if (contact.initiated && Math.random() > 0.5) {
+          continue;
+        } else if (!contact.last_message) {
+          continue;
+        }
+        $('.' + contact._id).addClass('filtered');
+      }
+    };
+    function filterIgnore() {
+      for (var i = 0, ii = contacts.length; i < ii; i += 1 ) {
+        var contact = contacts[i];
+        if (contact.initiated && (contact.last_message.length > 25 || contact.keywords || new Date().getDate() - new Date(contact.last_contacted).getDate() > 7)) {
+          $('.' + contact._id).addClass('filtered');
+        }
+      }
+    };
+    function filterFriendzone() {
+
+    };
 
     // TODO: cache these.
     var sort_by = function(field, reverse, primer){
@@ -98,6 +145,7 @@
 
         var el = $('<li></li>');
         el.addClass('contact');
+        el.addClass(contact._id);
         if (contact.initiated) {
           el.addClass('ignored');
         }

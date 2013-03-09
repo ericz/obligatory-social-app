@@ -8,6 +8,16 @@ body, html {
   background-color: #323232;
 }
 
+#contacts .filtered {
+  border-color: #cdb248;
+}
+.filtered {
+  background-color: #f5e191 !important;
+}
+#queries .filtered {
+  color: #ad932f;
+}
+
 #login_wrap {
   text-align: center;
 
@@ -76,15 +86,19 @@ body, html {
   padding-top: 40px;
 }
 
-#title {
-  position: absolute;
+#queries {
+  float: right;
+  width: 230px;
 }
-#title h1 {
-  bottom: 0;
-  right: 0;
-  width: 300px;
-  height: 300px;
-  font-size: 30px;
+
+.query {
+  font-size: 14px;
+  padding: 5px;
+  margin: 10px 0;
+  cursor: pointer;
+  background-color: #444;
+  font-weight: 300;
+  color: #ccc;
 }
 
 #overtimes {
@@ -207,6 +221,7 @@ body, html {
 }
 
 #contacts {
+  background-color: #404040;
   float: left;
   width: 65%;
   min-width: 300px;
