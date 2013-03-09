@@ -166,30 +166,97 @@ app.post('/register', function(req, res) {
 
 // Logged in pages
 app.get('/dashboard', ensureAuthenticated, function(req, res) {
-  res.render('dashboard', { user: req.user });
+  Contact.find({ assoc: req.user.username }).toArray(function(err, contacts) {
+    res.render('dashboard', { user: req.user, contacts: contacts });
+  });
 });
+
+var APIs = {
+  facebook: function(url, req, res) {
+    var serv = req.user[req.params.service];
+    restler.get(url).on('complete', function(graphres) {
+      graphres = JSON.parse(graphres);
+      if (graphres.inbox && graphres.inbox.data && graphres.inbox.data.length > 0) {
+        // TODO: handle this.
+        var next = graphres.inbox.paging ? graphres.inbox.paging.previous : '';
+        console.log(graphres.inbox.paging)
+        var inbox = graphres.inbox.data;
+        var userContacts = [];
+        var total = inbox.length;
+        console.log(total);
+        for (var i = 0, ii = inbox.length; i < ii; i += 1) {
+          var exchange = inbox[i];
+          var contactInfo = exchange.to.data;
+          // TODO: account for multiple people chats.
+          if (contactInfo.length !== 2) {
+            continue;
+          }
+          var contact = {
+            name: contactInfo[0].id === serv.id ? contactInfo[1].name : contactInfo[0].name,
+            facebook_id: contactInfo[0].id === serv.id ? contactInfo[1].id : contactInfo[0].id
+          }
+          if (exchange.comments) {
+            var lastMessage = exchange.comments.data[exchange.comments.data.length - 1];
+            contact.last_contacted = new Date(lastMessage.created_time);
+            contact.last_message = lastMessage.message;
+            contact.initiated = exchange.comments.data[exchange.comments.data.length - 1].from.id === serv.id;
+            contact.method = 'facebook';
+            contact.assoc = req.user.username;
+
+            (function(contact, index) {
+              Contact.find({ assoc: contact.assoc, name: contact.name }).toArray(function(err, contacts) {
+                var dbContact = contact;
+                if (err) {
+                  console.log(err);
+                  total -= 1;
+                } else if (!!contacts) {
+                  for (var j = 0, jj = contacts.length; j < jj; j += 1) {
+                    _contact = contacts[j];
+                    if (_contact.facebook_id === contact.facebook_id) {
+                      dbContact = _contact;
+                      break;
+                    } else if (!_contact.facebook_id) {
+                      dbContact = _contact;
+                    }
+                  }
+                }
+                if (dbContact.last_contacted < contact.last_contacted) {
+                  // TODO: make this extend or something so less messy code.
+                  dbContact.last_contacted = contact.last_contacted;
+                  dbContact.last_message = contact.last_message;
+                  dbContact.initiated = contact.initiated;
+                  dbContact.facebook_id = contact.facebook_id;
+                  dbContact.method = contact.method;
+                }
+
+                Contact.update({ _id: dbContact._id }, dbContact, { upsert: true }, function(err) {
+                  userContacts.push(dbContact);
+                  if (index === total - 1) {
+                    console.log(userContacts);
+                    console.log('end', total, next);
+                    res.redirect('/dashboard');
+                  }
+                });
+              });
+            })(contact, i);
+          } else if (i === total - 1) {
+            total -= 1;
+          }
+        }
+      }
+    });
+  },
+  twitter: function() {}
+}
 
 app.get('/dashboard/:service', ensureAuthenticated, function(req, res) {
   var serv = req.user[req.params.service];
   if (req.params.service === 'facebook') {
-    restler.get('https://graph.facebook.com/' + serv.id + '?fields=inbox&access_token=' + serv.accessToken)
-      .on('complete', function(graphres) {
-        graphres = JSON.parse(graphres);
-        if (graphres.inbox && graphres.inbox.data && graphres.inbox.data.length > 0) {
-          var inbox = graphres.inbox.data;
-          for (var i = 0, ii = inbox.length; i < ii; i += 1) {
-            var exchange = inbox[i];
-            var contact = {
-              name: exchange.to.data[0].name,
-              facebook_id: exchange.to.data[0].id
-            }
-            console.log(contact.name);
-          }
-        }
-      });;
+    var url = 'https://graph.facebook.com/' + serv.id + '?fields=inbox.limit(500)&access_token=' + serv.accessToken;
+    APIs.facebook(url, req, res);
   }
-  res.render('dashboard', { user: req.user });
 });
+
 
 // Auth.
 // Permissions I want:

@@ -1,0 +1,22 @@
+Yo, connect with:
+<% if (!user.facebook) { %>
+  <a href="/auth/facebook">Facebook</a>
+<% } %>
+
+<ul id="contacts" class="papercut">
+  <% console.log(contacts); for (var i = 0, ii = contacts.length; i < ii; i += 1) { var contact = contacts[i]; %>
+    <li class="contact<% if (contact.initiated) { %> ignored<% } %>">
+      <h1><%- contact.name %></h1>
+      <h2><%- contact.last_contacted %></h2>
+    </li>
+  <% } %>
+</ul>
+
+<br>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    var contacts = <%- JSON.stringify(contacts) %>;
+    stroll.bind($('#contacts'));
+  });
+</script>

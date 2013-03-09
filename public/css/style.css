@@ -2,3 +2,8 @@ html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,pre,code,form,fields
 a {outline: none;} /* Gets rid of Firefox's dotted borders */
 a img {border: none;} /* Gets rid of IE's blue borders */
 
+#contacts {
+  width: 500px;
+  height: 500px;
+  overflow: scroll;
+}
