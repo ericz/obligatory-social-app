@@ -4,7 +4,7 @@
   "description": "## Hackathon game plan",
   "main": "server.js",
   "dependencies": {
-    "express": "~2.5.11"
+    "express": "~2.5.11",
   },
   "devDependencies": {},
   "scripts": {
