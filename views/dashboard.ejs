@@ -183,7 +183,7 @@
     $('#contacts').on('click', '.send_facebook_message', function(ev) {
       var user_id = $(ev.currentTarget).attr('data-fb');
       var url = 'http://www.facebook.com/dialog/send?to=' + user_id;
-      url += '&redirect_uri=' + 'http://contact.michellebu.com/dashboard';
+      url += '&redirect_uri=' + 'http://contacts.michellebu.com/dashboard';
       url += '&link=';
       url += $('#pre_message').val() || 'http://news.ycombinator.com/new';
       url += '&app_id=<%- app_id %>';

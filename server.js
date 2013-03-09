@@ -70,7 +70,7 @@ passport.use(new FacebookStrategy({
     clientSecret: conf.FB_APP_SECRET,
     passReqToCallback: true,
     profileFields: ['id', 'displayName', 'gender', 'emails'],
-    callbackURL: "http://contact.michellebu.com/auth/facebook/callback"
+    callbackURL: "http://contacts.michellebu.com/auth/facebook/callback"
   },
   function(req, accessToken, refreshToken, profile, done) {
     var user = req.user;
