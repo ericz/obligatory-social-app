@@ -5,6 +5,7 @@ var fs = require('fs');
 var app =  express.createServer();
 var passport = require('passport');
 var bcrypt = require('bcrypt');
+var restler = require('restler');
 
 var FacebookStrategy = require('passport-facebook').Strategy;
 var LocalStrategy = require('passport-local').Strategy;
@@ -164,7 +165,29 @@ app.post('/register', function(req, res) {
 });
 
 // Logged in pages
-app.get('/dashboard', ensureAuthenticated, function(req, res){
+app.get('/dashboard', ensureAuthenticated, function(req, res) {
+  res.render('dashboard', { user: req.user });
+});
+
+app.get('/dashboard/:service', ensureAuthenticated, function(req, res) {
+  var serv = req.user[req.params.service];
+  if (req.params.service === 'facebook') {
+    restler.get('https://graph.facebook.com/' + serv.id + '?fields=inbox&access_token=' + serv.accessToken)
+      .on('complete', function(graphres) {
+        graphres = JSON.parse(graphres);
+        if (graphres.inbox && graphres.inbox.data && graphres.inbox.data.length > 0) {
+          var inbox = graphres.inbox.data;
+          for (var i = 0, ii = inbox.length; i < ii; i += 1) {
+            var exchange = inbox[i];
+            var contact = {
+              name: exchange.to.data[0].name,
+              facebook_id: exchange.to.data[0].id
+            }
+            console.log(contact.name);
+          }
+        }
+      });;
+  }
   res.render('dashboard', { user: req.user });
 });
 
@@ -185,8 +208,7 @@ app.get('/auth/facebook',
 app.get('/auth/facebook/callback', 
   passport.authenticate('facebook', { failureRedirect: '/login' }),
   function(req, res) {
-    // TODO: crazy fb graph api stuff.
-    res.redirect('/dashboard');
+    res.redirect('/dashboard/facebook');
   }
 );
 

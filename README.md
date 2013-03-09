@@ -22,3 +22,7 @@
 * Mobile web.
 * Notifications.
 * (Extra) pretty graphs.
+
+## Continued
+
+* Realtime Facebook subscriptions: http://developers.facebook.com/docs/howtos/managing-realtime-update-subscriptions/
