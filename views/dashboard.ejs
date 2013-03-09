@@ -4,12 +4,14 @@ Yo, connect with:
 <% } %>
 
 <ul id="contacts" class="papercut">
-  <% console.log(contacts); for (var i = 0, ii = contacts.length; i < ii; i += 1) { var contact = contacts[i]; %>
+<!--
+  <% for (var i = 0, ii = contacts.length; i < ii; i += 1) { var contact = contacts[i]; %>
     <li class="contact<% if (contact.initiated) { %> ignored<% } %>">
       <h1><%- contact.name %></h1>
       <h2><%- contact.last_contacted %></h2>
     </li>
   <% } %>
+-->
 </ul>
 
 <br>
@@ -17,6 +19,100 @@ Yo, connect with:
 <script type="text/javascript">
   $(document).ready(function() {
     var contacts = <%- JSON.stringify(contacts) %>;
+
+    // TODO: cache these.
+    var sort_by = function(field, reverse, primer){
+      var key = function (x) {return primer ? primer(x[field]) : x[field]};
+      return function (a,b) {
+        var A = key(a), B = key(b);
+        return ( (A < B) ? -1 : ((A > B) ? 1 : 0) ) * [-1,1][+!!reverse];
+      }
+    };
+
+    function findKeywords() {
+      var re = /[A-Za-z](6)/g;
+      for (var i = 0, ii = contacts.length; i < ii; i += 1) {
+        var keywords = [];
+        var message = contacts[i].last_message.split(' ');
+        for (var j = 0, jj = message.length; j < jj; j += 1) {
+          var word = message[j];
+          if (word.length > 6) {
+            keywords.push(word);
+          }
+        }
+        console.log(keywords);
+        contacts[i].keywords = keywords.join(', ');
+      }
+    };
+
+    function fillContacts() {
+      $('#contacts').empty();
+      for (var i = 0, ii = contacts.length; i < ii; i += 1) {
+        var contact = contacts[i];
+        var el = $('<li></li>');
+        el.addClass('contact');
+
+        var star = $('<div></div>').addClass('star').attr('data-id', contact._id);
+        star.html('Star');
+        el.append(star);
+
+        el.append('<h1>' + contact.name + '</h1>');
+        el.append('<h2>' + contact.last_contacted + '</h2>');
+        if (contact.facebook_id) {
+          var fbdiv = $('<div></div>').attr('data-fb', contact.facebook_id);
+          fbdiv.addClass('send_facebook_message');
+          fbdiv.html('Send Facebook message');
+          el.append(fbdiv);
+        }
+
+        var message = $('<div></div>').addClass('message');
+        var person = contact.initiated ? 'You' : contact.name;
+        if (contact.keywords && contact.keywords.length > 0) {
+          message.html(person + ' last talked about <span class="keywords">' + contact.keywords + '</span>');
+        } else {
+          message.html(person + ' last sent "' + contact.last_message + '"');
+        }
+        el.append(message);
+        $('#contacts').append(el);
+      }
+    };
+
+    $('#contacts').on('click', '.send_facebook_message', function(ev) {
+      var user_id = $(ev.currentTarget).attr('data-fb');
+      var url = 'http://www.facebook.com/dialog/send?to=' + user_id;
+      url += '&redirect_uri=' + 'http://localhost:9000/dashboard';
+      url += '&link=' + 'http://news.ycombinator.com/new';
+      url += '&app_id=<%- app_id %>';
+      window.location = url;
+    });
+    $('#contacts').on('click', '.star', function(ev) {
+      var _id = $(ev.currentTarget).attr('data-id');
+      $(ev.currentTarget).removeClass('star');
+      $(ev.currentTarget).addClass('unstar');
+      $.post('/star',
+        { contact: _id },
+        function(data) {
+          console.log(data);
+        }
+      );
+    });
+    $('#contacts').on('click', '.unstar', function(ev) {
+      var _id = $(ev.currentTarget).attr('data-id');
+      $(ev.currentTarget).removeClass('unstar');
+      $(ev.currentTarget).addClass('star');
+      $.post('/unstar',
+        { contact: _id },
+        function(data) {
+          console.log(data);
+        }
+      );
+    });
+
+    contacts = contacts.sort(sort_by('last_contacted'), true);
+    findKeywords();
+    console.log(contacts);
+    fillContacts();
+
     stroll.bind($('#contacts'));
   });
 </script>

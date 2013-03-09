@@ -6,6 +6,7 @@ var app =  express.createServer();
 var passport = require('passport');
 var bcrypt = require('bcrypt');
 var restler = require('restler');
+var pos = require('pos');
 
 var FacebookStrategy = require('passport-facebook').Strategy;
 var LocalStrategy = require('passport-local').Strategy;
@@ -167,7 +168,7 @@ app.post('/register', function(req, res) {
 // Logged in pages
 app.get('/dashboard', ensureAuthenticated, function(req, res) {
   Contact.find({ assoc: req.user.username }).toArray(function(err, contacts) {
-    res.render('dashboard', { user: req.user, contacts: contacts });
+    res.render('dashboard', { user: req.user, contacts: contacts, app_id: conf.FB_APP_ID });
   });
 });
 
@@ -178,17 +179,16 @@ var APIs = {
       graphres = JSON.parse(graphres);
       if (graphres.inbox && graphres.inbox.data && graphres.inbox.data.length > 0) {
         // TODO: handle this.
-        var next = graphres.inbox.paging ? graphres.inbox.paging.previous : '';
-        console.log(graphres.inbox.paging)
+        var next = graphres.inbox.paging ? graphres.inbox.paging.next : '';
         var inbox = graphres.inbox.data;
         var userContacts = [];
         var total = inbox.length;
-        console.log(total);
         for (var i = 0, ii = inbox.length; i < ii; i += 1) {
           var exchange = inbox[i];
           var contactInfo = exchange.to.data;
           // TODO: account for multiple people chats.
           if (contactInfo.length !== 2) {
+            total -= 1;
             continue;
           }
           var contact = {
@@ -199,6 +199,18 @@ var APIs = {
             var lastMessage = exchange.comments.data[exchange.comments.data.length - 1];
             contact.last_contacted = new Date(lastMessage.created_time);
             contact.last_message = lastMessage.message;
+            /*if (lastMessage.message) {
+              var poslist = new pos.Tagger().tag(new pos.Lexer().lex(lastMessage.message));
+              console.log(poslist);
+              filteredPos = [];
+              for (var p = 0, pp = poslist.length; p < pp && p <= 5; p += 1) {
+                console.log(p, poslist.length, pp);
+                if (poslist[p][1] === 'NN' || poslist[p][1] === 'NNS') {
+                  filteredPos.push(poslist);
+                }
+              }
+              contact.keywords = filteredPos;
+            }*/
             contact.initiated = exchange.comments.data[exchange.comments.data.length - 1].from.id === serv.id;
             contact.method = 'facebook';
             contact.assoc = req.user.username;
@@ -223,7 +235,7 @@ var APIs = {
                 if (dbContact.last_contacted < contact.last_contacted) {
                   // TODO: make this extend or something so less messy code.
                   dbContact.last_contacted = contact.last_contacted;
-                  dbContact.last_message = contact.last_message;
+                  dbContact.last_message = contact.last_message || dbContact.last_message;
                   dbContact.initiated = contact.initiated;
                   dbContact.facebook_id = contact.facebook_id;
                   dbContact.method = contact.method;
@@ -232,9 +244,11 @@ var APIs = {
                 Contact.update({ _id: dbContact._id }, dbContact, { upsert: true }, function(err) {
                   userContacts.push(dbContact);
                   if (index === total - 1) {
-                    console.log(userContacts);
-                    console.log('end', total, next);
-                    res.redirect('/dashboard');
+                    //if (next) {
+                     // APIs.facebook(next, req, res);
+                    //} else {
+                      res.redirect('/dashboard');
+                    //}
                   }
                 });
               });
@@ -257,6 +271,19 @@ app.get('/dashboard/:service', ensureAuthenticated, function(req, res) {
   }
 });
 
+// Starring a contact.
+app.get('/star', ensureAuthenticated, function(req, res) {
+  var contact = req.body.contact;
+  Contact.updateById(contact, { $set: { starred: true } }, function(err) {
+    console.log(err);
+  });
+});
+app.get('/unstar', ensureAuthenticated, function(req, res) {
+  var contact = req.body.contact;
+  Contact.updateById(contact, { $set: { starred: false } }, function(err) {
+    console.log(err);
+  });
+});
 
 // Auth.
 // Permissions I want:
