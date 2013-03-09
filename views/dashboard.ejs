@@ -10,6 +10,7 @@
     <% } %>
   -->
   </ul>
+  <div id="overtimes"></div>
   <div id="options">
     <% if (user.facebook) { var user_name = user.facebook.displayName; } else { var user_name = user.username; } %>
     Hey there <span class="name"><%- user_name %></span>.
@@ -23,7 +24,7 @@
       <button id="show_starred" onclick="showStarredOnly()">Show starred only</button>
       <br>
       <label for="star_time">Days until alert:</label>
-      <input id="star_time" value="14"></input>
+      <input id="star_time" value="<%- user.stime %>"></input>
       <button id="set_star_time">Set Days</button>
       <br>
       <label for="pre_message">Link to send:</label>
@@ -39,6 +40,7 @@
 <script type="text/javascript">
   $(document).ready(function() {
     var contacts = <%- JSON.stringify(contacts) %>;
+    var stime = <%- user.stime %>;
 
     // TODO: cache these.
     var sort_by = function(field, reverse, primer){
@@ -49,6 +51,23 @@
         return ( (A < B) ? -1 : ((A > B) ? 1 : 0) ) * [-1,1][+!!reverse];                  
       }
     };
+
+    function showOvertime() {
+      $('#overtimes').empty();
+      if (stime) {
+        for (var i = 0, ii = contacts.length; i < ii; i += 1) {
+          var contact = contacts[i];
+          var sdate = new Date();
+          sdate.setDate(sdate.getDate() - stime);
+          if (contact.starred && sdate - new Date(contact.last_contacted) > 0) {
+            var overtime = $('<div></div>').addClass('overtime');
+            overtime.html('You haven\'t talked to <span class="name">' + contact.name
+              + '</span> in a while!');
+            $('#overtimes').append(overtime);
+          }
+        }
+      }
+    }
 
     function findKeywords() {
       var re = /[A-Za-z](6)/g;
@@ -155,6 +174,21 @@
         }
       );
     });
+    $('#set_star_time').on('click', function() {
+      newStime = $('#star_time').val();
+      try {
+        newStime = parseInt(newStime);
+      } catch (e) {
+        return;
+      }
+
+      stime = newStime;
+      showOvertime();
+
+      $.post('/stime', { stime: newStime }, function(data) {
+        if (data) { console.log(data); }
+      });
+    });
 
     var reverseName = false;
     var reverseTime = false;
@@ -175,6 +209,7 @@
       fillContacts(showStarred);
     };
 
+    showOvertime();
     findKeywords();
     sortByTime();
 

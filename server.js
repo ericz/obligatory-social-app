@@ -112,7 +112,8 @@ passport.use(new LocalStrategy(
 ));
 
 app.get('/', function(req, res) {
-  res.render('index', { user: req.user });
+  res.redirect('/login');
+  //res.render('index', { user: req.user });
 });
 
 app.get('/login', function(req, res) {
@@ -283,6 +284,16 @@ app.post('/star', ensureAuthenticated, function(req, res) {
 app.post('/unstar', ensureAuthenticated, function(req, res) {
   var contact = req.body.contact;
   Contact.updateById(contact, { $set: { starred: false } }, function(err) {
+    if (err) {
+      console.log(err);
+    }
+  });
+});
+
+// Posting a new star time.
+app.post('/stime', ensureAuthenticated, function(req, res) {
+  var stime = req.body.stime;
+  User.updateById(req.user._id, { $set: { stime: stime } }, function(err) {
     if (err) {
       console.log(err);
     }

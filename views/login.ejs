@@ -1,11 +1,15 @@
-<form id="login_form" method="post">
-  <label for="username_field">username</label>
-  <input type="text" name="username" id="username_field" required></input>
-  <label for="password_field">password</label>
-  <input type="password" name="password" id="password_field" required></input>
-  <input type="hidden" id="action" value="/login"></input>
-  <div class="clear"></div><button id="Login">Login</button>
-  <button id="register">Register</button></form>
+<div id="login_wrap">
+  <h1>Contact</h1>
+  <form id="login_form" method="post">
+    <label for="username_field">username</label>
+    <input type="text" name="username" id="username_field" required></input>
+    <br>
+    <label for="password_field">password</label>
+    <input type="password" name="password" id="password_field" required></input>
+    <input type="hidden" id="action" value="/login"></input>
+    <div class="clear"></div><button id="Login">Login</button>
+    <button id="register">Register</button></form>
+</div>
 
 <script type="text/javascript">
   $(document).ready(function() {
