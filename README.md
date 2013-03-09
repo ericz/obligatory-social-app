@@ -14,7 +14,11 @@
 * Extract subject chatted about.
   * If successful, show subject.
   * Otherwise, 'You last said "..." to ___ on xx/xx/xx'
-* Create contact list with cute queries like 'Who can I ask for a favor from?', 'Who would it be unweird to give gifts to?'
+* Create contact list with cute queries like:
+  * 'Who can I ask for a favor from?'
+  * 'Who would it be unweird to give gifts to?'
+  * 'Who should I invite to my next party?'
+  * 'Who has been ignoring me?' -- unanswered messages, wall posts, etc.
 * Mobile web.
 * Notifications.
 * (Extra) pretty graphs.
