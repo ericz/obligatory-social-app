@@ -11,10 +11,26 @@
   -->
   </ul>
   <div id="options">
-    Yo, connect with:
+    <% if (user.facebook) { var user_name = user.facebook.displayName; } else { var user_name = user.username; } %>
+    Hey there <span class="name"><%- user_name %></span>.
     <% if (!user.facebook) { %>
-      <a href="/auth/facebook">Facebook</a>
+      <a href="/auth/facebook">Connect to Facebook</a>
     <% } %>
+
+    <div id="buttons">
+      <button id="time_sort" onclick="sortByTime()">Sort by Date</button>
+      <button id="name_sort" onclick="sortByName()">Sort by Name</button>
+      <button id="show_starred" onclick="showStarredOnly()">Show starred only</button>
+      <br>
+      <label for="star_time">Days until alert:</label>
+      <input id="star_time" value="14"></input>
+      <button id="set_star_time">Set Days</button>
+      <br>
+      <label for="pre_message">Link to send:</label>
+      <input id="pre_message"></input>
+
+    </div>
+    <a href="/logout" id="logout">Logout</a>
   </div>
 </div>
 
@@ -49,10 +65,18 @@
       }
     };
 
-    function fillContacts() {
+    function fillContacts(s) {
+      var starCount = 0;
+      if (contacts.length === 0) {
+        $('#contacts').html('<li><h1>Connect with a social service to see your contacts!</h1></li>');
+        return;
+      }
       $('#contacts').empty();
       for (var i = 0, ii = contacts.length; i < ii; i += 1) {
         var contact = contacts[i];
+        if (s && !contact.starred) { continue; }
+        starCount += 1;
+
         var el = $('<li></li>');
         el.addClass('contact');
         if (contact.initiated) {
@@ -83,13 +107,18 @@
           el.append(fbdiv);
         }
       }
+      if (s && starCount === 0) {
+        $('#contacts').html('<li><h1>You have not starred any contacts! Star contacts to get notifications when you haven\'t talked to them for a long time.</h1></li>');
+      }
+
     };
 
     $('#contacts').on('click', '.send_facebook_message', function(ev) {
       var user_id = $(ev.currentTarget).attr('data-fb');
       var url = 'http://www.facebook.com/dialog/send?to=' + user_id;
       url += '&redirect_uri=' + 'http://localhost:9000/dashboard';
-      url += '&link=' + 'http://news.ycombinator.com/new';
+      url += '&link=';
+      url += $('#pre_message').val() || 'http://news.ycombinator.com/new';
       url += '&app_id=<%- app_id %>';
       window.location = url;
     });
@@ -127,17 +156,28 @@
       );
     });
 
-    function sortByName(reverse) {
-      contacts = contacts.sort(sort_by('name', reverse));
+    var reverseName = false;
+    var reverseTime = false;
+    var showStarred = false;
+
+    sortByName = function() {
+      reverseName = !reverseName;
+      contacts = contacts.sort(sort_by('name', reverseName));
+      fillContacts(showStarred);
     };
-    function sortByTime(reverse) {
-      contacts = contacts.sort(sort_by('last_contacted', reverse));
+    sortByTime = function() {
+      reverseTime = !reverseTime;
+      contacts = contacts.sort(sort_by('last_contacted', reverseTime));
+      fillContacts(showStarred);
+    };
+    showStarredOnly = function() {
+      showStarred = !showStarred;
+      fillContacts(showStarred);
     };
 
-    sortByTime(true);
     findKeywords();
-    fillContacts();
+    sortByTime();
 
-    stroll.bind($('#contacts'));
+    stroll.bind($('#contacts'), { live: true });
   });
 </script>
