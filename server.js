@@ -272,16 +272,20 @@ app.get('/dashboard/:service', ensureAuthenticated, function(req, res) {
 });
 
 // Starring a contact.
-app.get('/star', ensureAuthenticated, function(req, res) {
+app.post('/star', ensureAuthenticated, function(req, res) {
   var contact = req.body.contact;
   Contact.updateById(contact, { $set: { starred: true } }, function(err) {
-    console.log(err);
+    if (err) {
+      console.log(err);
+    }
   });
 });
-app.get('/unstar', ensureAuthenticated, function(req, res) {
+app.post('/unstar', ensureAuthenticated, function(req, res) {
   var contact = req.body.contact;
   Contact.updateById(contact, { $set: { starred: false } }, function(err) {
-    console.log(err);
+    if (err) {
+      console.log(err);
+    }
   });
 });
 

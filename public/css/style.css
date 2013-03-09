@@ -2,8 +2,136 @@ html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,pre,code,form,fields
 a {outline: none;} /* Gets rid of Firefox's dotted borders */
 a img {border: none;} /* Gets rid of IE's blue borders */
 
+body, html {
+  font-family: Helvetica, Arial;
+  color: #333;
+  background-color: #323232;
+}
+
+#wrap {
+  margin: 0 auto;
+  width: 700px;
+  position: relative;
+  padding-top: 40px;
+}
+
+#options {
+  float: right;
+  width: 20%;
+  min-width: 200px;
+  background-color: #222;
+  color: #ccc;
+  padding: 15px;
+}
+
 #contacts {
-  width: 500px;
-  height: 500px;
+  float: left;
+  width: 65%;
+  min-width: 300px;
+  height: 600px;
   overflow: scroll;
+  position: relative;
+  border: 15px solid #222;
+  border-width: 15px 0;
+}
+
+#contacts h1 {
+  font-size: 20px;
+  margin: 0;
+  padding: 0;
+  font-weight: 700;
+}
+
+#contacts h2 {
+  text-transform: uppercase;
+  margin: 0;
+  padding: 0;
+  font-weight: 300;
+  font-size: 12px;
+}
+
+#contacts li {
+  padding: 15px;
+  background-color: #eee;
+  border-bottom: 1px solid #ddd;
+}
+
+#contacts li:nth-child(odd) {
+  background-color: #fff;
+}
+
+#contacts li:nth-child(odd) .message {
+  background-color: #eee;
+}
+
+#contacts .star {
+  width: 15px;
+  height: 15px;
+  border-radius: 15px;
+  background-color: #ddd;
+  border: 1px solid #ccc;
+  float: right;
+  cursor: pointer;
+}
+
+#contacts .unstar {
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+  border-radius: 15px;
+  border: 1px solid #d7ac00;
+  background-color: #FFCC00;
+  float: right;
+}
+
+#contacts .send_facebook_message {
+  font-size: 10px;
+  text-transform: uppercase;
+  display: inline-block;
+  padding: 5px;
+  border-radius: 2px;
+  background-color: #3B5998;
+  border-bottom: 1px solid #253f76;
+  border-top: 1px solid #627eba;
+  text-shadow: 0px -1px 0px #253f76;
+  color: #fff;
+  cursor: pointer;
+}
+
+#contacts .send_facebook_message:hover {
+  background-color: #253f76;
+}
+
+.facebook {
+  font-weight: 600;
+  color: #3B5998;
+}
+
+.keyword {
+  display: inline-block;
+  padding: 2px 3px;
+  border-radius: 2px;
+  font-size: 10px;
+  background-color: #FFCC00;
+  color: #735C00;
+  text-shadow: 0px 1px 0px #FFDF61;
+  border-top: 1px solid #FFDF61;
+  border-bottom: 1px solid #BF9900;
+}
+
+.message {
+  border-radius: 5px;
+  font-weight: 300;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+}
+
+.time {
+  font-weight: 600;
+}
+
+#contacts .ignored {
+  border-left: 3px solid #B2532B;
 }

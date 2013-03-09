@@ -1,18 +1,22 @@
-Yo, connect with:
-<% if (!user.facebook) { %>
-  <a href="/auth/facebook">Facebook</a>
-<% } %>
 
-<ul id="contacts" class="papercut">
-<!--
-  <% for (var i = 0, ii = contacts.length; i < ii; i += 1) { var contact = contacts[i]; %>
-    <li class="contact<% if (contact.initiated) { %> ignored<% } %>">
-      <h1><%- contact.name %></h1>
-      <h2><%- contact.last_contacted %></h2>
-    </li>
-  <% } %>
--->
-</ul>
+<div id="wrap">
+  <ul id="contacts" class="papercut">
+  <!--
+    <% for (var i = 0, ii = contacts.length; i < ii; i += 1) { var contact = contacts[i]; %>
+      <li class="contact<% if (contact.initiated) { %> ignored<% } %>">
+        <h1><%- contact.name %></h1>
+        <h2><%- contact.last_contacted %></h2>
+      </li>
+    <% } %>
+  -->
+  </ul>
+  <div id="options">
+    Yo, connect with:
+    <% if (!user.facebook) { %>
+      <a href="/auth/facebook">Facebook</a>
+    <% } %>
+  </div>
+</div>
 
 <br>
 
@@ -23,9 +27,10 @@ Yo, connect with:
     // TODO: cache these.
     var sort_by = function(field, reverse, primer){
       var key = function (x) {return primer ? primer(x[field]) : x[field]};
+
       return function (a,b) {
         var A = key(a), B = key(b);
-        return ( (A < B) ? -1 : ((A > B) ? 1 : 0) ) * [-1,1][+!!reverse];
+        return ( (A < B) ? -1 : ((A > B) ? 1 : 0) ) * [-1,1][+!!reverse];                  
       }
     };
 
@@ -40,8 +45,7 @@ Yo, connect with:
             keywords.push(word);
           }
         }
-        console.log(keywords);
-        contacts[i].keywords = keywords.join(', ');
+        contacts[i].keywords = keywords.length > 0 ? '<span class="keyword">' + keywords.join('</span>, <span class="keyword">') + '</span>' : '';
       }
     };
 
@@ -51,29 +55,33 @@ Yo, connect with:
         var contact = contacts[i];
         var el = $('<li></li>');
         el.addClass('contact');
+        if (contact.initiated) {
+          el.addClass('ignored');
+        }
 
-        var star = $('<div></div>').addClass('star').attr('data-id', contact._id);
-        star.html('Star');
+        var starClass = contact.starred ? 'unstar' : 'star';
+        var star = $('<div></div>').addClass(starClass).attr('data-id', contact._id);
         el.append(star);
 
         el.append('<h1>' + contact.name + '</h1>');
-        el.append('<h2>' + contact.last_contacted + '</h2>');
+        el.append('<h2>Last contacted <span class="time">' + $.timeago(contact.last_contacted) + '</span> via <span class="' + contact.method + '">' + contact.method + '</span></h2>');
+
+        var message = $('<div></div>').addClass('message');
+        var person = contact.initiated ? 'You' : contact.name;
+        if (contact.keywords) {
+          message.html(person + ' last talked about ' + contact.keywords);
+        } else {
+          message.html(person + ' last sent "' + contact.last_message + '"');
+        }
+        el.append(message);
+        $('#contacts').append(el);
+
         if (contact.facebook_id) {
           var fbdiv = $('<div></div>').attr('data-fb', contact.facebook_id);
           fbdiv.addClass('send_facebook_message');
           fbdiv.html('Send Facebook message');
           el.append(fbdiv);
         }
-
-        var message = $('<div></div>').addClass('message');
-        var person = contact.initiated ? 'You' : contact.name;
-        if (contact.keywords && contact.keywords.length > 0) {
-          message.html(person + ' last talked about <span class="keywords">' + contact.keywords + '</span>');
-        } else {
-          message.html(person + ' last sent "' + contact.last_message + '"');
-        }
-        el.append(message);
-        $('#contacts').append(el);
       }
     };
 
@@ -89,6 +97,11 @@ Yo, connect with:
       var _id = $(ev.currentTarget).attr('data-id');
       $(ev.currentTarget).removeClass('star');
       $(ev.currentTarget).addClass('unstar');
+      for (var i = 0, ii = contacts.length; i < ii; i += 1) {
+        if (contacts[i]._id === _id) {
+          contacts[i].starred = true;
+        }
+      }
       $.post('/star',
         { contact: _id },
         function(data) {
@@ -97,9 +110,15 @@ Yo, connect with:
       );
     });
     $('#contacts').on('click', '.unstar', function(ev) {
+    console.log('star');
       var _id = $(ev.currentTarget).attr('data-id');
       $(ev.currentTarget).removeClass('unstar');
       $(ev.currentTarget).addClass('star');
+      for (var i = 0, ii = contacts.length; i < ii; i += 1) {
+        if (contacts[i]._id === _id) {
+          contacts[i].starred = false;
+        }
+      }
       $.post('/unstar',
         { contact: _id },
         function(data) {
@@ -108,9 +127,15 @@ Yo, connect with:
       );
     });
 
-    contacts = contacts.sort(sort_by('last_contacted'), true);
+    function sortByName(reverse) {
+      contacts = contacts.sort(sort_by('name', reverse));
+    };
+    function sortByTime(reverse) {
+      contacts = contacts.sort(sort_by('last_contacted', reverse));
+    };
+
+    sortByTime(true);
     findKeywords();
-    console.log(contacts);
     fillContacts();
 
     stroll.bind($('#contacts'));
