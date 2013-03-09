@@ -111,8 +111,11 @@ passport.use(new LocalStrategy(
 ));
 
 app.get('/', function(req, res) {
-  res.redirect('/login');
-  //res.render('index', { user: req.user });
+  if (req.user) {
+    res.redirect('/dashboard');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/login', function(req, res) {
