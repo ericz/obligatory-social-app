@@ -71,7 +71,7 @@ passport.use(new FacebookStrategy({
     clientSecret: conf.FB_APP_SECRET,
     passReqToCallback: true,
     profileFields: ['id', 'displayName', 'gender', 'emails'],
-    callbackURL: "http://localhost:9000/auth/facebook/callback"
+    callbackURL: "http://contact.michellebu.com/auth/facebook/callback"
   },
   function(req, accessToken, refreshToken, profile, done) {
     var user = req.user;
@@ -327,7 +327,7 @@ app.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-app.listen(9000);
+app.listen(8010);
 
 // Ensure auth for pages that require it.
 function ensureAuthenticated(req, res, next) {
