@@ -7,6 +7,37 @@ var passport = require('passport');
 
 var FacebookStrategy = require('passport-facebook').Strategy;
 
+var mongo = require('mongoskin');
+var db = mongo.db('mongo://localhost:27017/connect');
+
+/**
+ * User:
+ *  username: Self-generated,
+ *  facebook: profile,
+ *  accessToken: {
+ *    facebook: 'xfdfsdf',
+ *    twitter: 'werwerw',
+ *    ...
+ *  }
+ */
+var User = db.collection('users');
+
+
+/**
+ * Contact:
+ *  sources: {
+ *    facebook: fb_id,
+ *    twitter: tw_id,
+ *    ... 
+ *  }, <- match by username, name.
+ *  name: 'Michelle Bu',
+ *  last_contacted: Date,
+ *  initiated: true/false (if the user initiated contact).
+ *  last_message: 'Hi I got a new cat.',
+ *  interests: [] <- if we can find any from likes, etc.
+ */
+var Contact = db.collection('contacts');
+
 // Initialize main server.
 app.configure(function() {
   app.use(express.cookieParser());
@@ -22,7 +53,8 @@ app.set('views', __dirname + '/views');
 
 // Passport utils.
 passport.serializeUser(function(user, callback) {
-  callback(user.id);
+  User.find
+  callback(null, user.id);
 });
 passport.deserializeUser(function(id, callback) {
   User.findById(id, callback);
@@ -30,13 +62,15 @@ passport.deserializeUser(function(id, callback) {
 
 // FACEBOOK Strategy for Passport.
 passport.use(new FacebookStrategy({
-    clientID: util.FB_APP_ID,
-    clientSecret: util.FB_APP_SECRET,
-    callbackURL: "/auth/facebook/callback"
+    clientID: conf.FB_APP_ID,
+    clientSecret: conf.FB_APP_SECRET,
+    profileFields: ['id', 'displayName', 'gender', 'emails'],
+    callbackURL: "http://localhost:9000/auth/facebook/callback"
   },
   function(accessToken, refreshToken, profile, done) {
-    console.log(arguments);
-  }
+    
+    return done(null, profile);
+  })
 );
 
 app.get('/', function(req, res) {
@@ -57,12 +91,13 @@ app.get('/dashboard', ensureAuthenticated, function(req, res){
 var scope = [
     'friends_likes' // likes
   , 'friends_interests' // interests
-  , 'read_stream' // feed
+  , 'read_stream' // feed, posts
   , 'read_mailbox' // inbox
 ]
 
 app.get('/auth/facebook',
-  passport.authenticate('facebook', { scope: scope }, function(req, res) { /* Ignore */ }
+  passport.authenticate('facebook', { scope: scope }),
+  function(req, res) { /* Ignore */ }
 );
 
 app.get('/auth/facebook/callback', 
