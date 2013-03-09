@@ -6,7 +6,6 @@ var app =  express.createServer();
 var passport = require('passport');
 var bcrypt = require('bcrypt');
 var restler = require('restler');
-var pos = require('pos');
 
 var FacebookStrategy = require('passport-facebook').Strategy;
 var LocalStrategy = require('passport-local').Strategy;
@@ -182,7 +181,7 @@ var APIs = {
       if (graphres.inbox && graphres.inbox.data && graphres.inbox.data.length > 0) {
         // TODO: handle this.
         var next = graphres.inbox.paging ? graphres.inbox.paging.next : '';
-        APIs.facebook(next, req, res, false);
+        //APIs.facebook(next, req, res, false);
         var inbox = graphres.inbox.data;
         var userContacts = [];
         var total = inbox.length;
