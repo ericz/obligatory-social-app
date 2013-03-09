@@ -146,6 +146,7 @@ app.post('/register', function(req, res) {
         bcrypt.hash(req.body.password, salt, function(err, hash) {
           // Save new user to database.
           User.insert({
+            stime: 14,
             username: req.body.username.toLowerCase(),
             hash: hash,
           }, {}, function(err, result) {
@@ -174,13 +175,14 @@ app.get('/dashboard', ensureAuthenticated, function(req, res) {
 });
 
 var APIs = {
-  facebook: function(url, req, res) {
+  facebook: function(url, req, res, redirect) {
     var serv = req.user[req.params.service];
     restler.get(url).on('complete', function(graphres) {
       graphres = JSON.parse(graphres);
       if (graphres.inbox && graphres.inbox.data && graphres.inbox.data.length > 0) {
         // TODO: handle this.
         var next = graphres.inbox.paging ? graphres.inbox.paging.next : '';
+        APIs.facebook(next, req, res, false);
         var inbox = graphres.inbox.data;
         var userContacts = [];
         var total = inbox.length;
@@ -244,10 +246,9 @@ var APIs = {
 
                 Contact.update({ _id: dbContact._id }, dbContact, { upsert: true }, function(err) {
                   userContacts.push(dbContact);
-                  if (index === total - 1) {
+                  if (redirect && index === total - 1) {
                     //if (next) {
                      // APIs.facebook(next, req, res);
-                    //} else {
                       res.redirect('/dashboard');
                     //}
                   }
@@ -268,7 +269,7 @@ app.get('/dashboard/:service', ensureAuthenticated, function(req, res) {
   var serv = req.user[req.params.service];
   if (req.params.service === 'facebook') {
     var url = 'https://graph.facebook.com/' + serv.id + '?fields=inbox.limit(500)&access_token=' + serv.accessToken;
-    APIs.facebook(url, req, res);
+    APIs.facebook(url, req, res, true);
   }
 });
 
