@@ -4,8 +4,10 @@ var express = require('express');
 var fs = require('fs');
 var app =  express.createServer();
 var passport = require('passport');
+var bcrypt = require('bcrypt');
 
 var FacebookStrategy = require('passport-facebook').Strategy;
+var LocalStrategy = require('passport-local').Strategy;
 
 var mongo = require('mongoskin');
 var db = mongo.db('mongo://localhost:27017/connect');
@@ -13,6 +15,7 @@ var db = mongo.db('mongo://localhost:27017/connect');
 /**
  * User:
  *  username: Self-generated,
+ *  hash: password hash,
  *  facebook: profile,
  *  accessToken: {
  *    facebook: 'xfdfsdf',
@@ -25,6 +28,7 @@ var User = db.collection('users');
 
 /**
  * Contact:
+ *  assoc: User.username,
  *  sources: {
  *    facebook: fb_id,
  *    twitter: tw_id,
@@ -53,8 +57,7 @@ app.set('views', __dirname + '/views');
 
 // Passport utils.
 passport.serializeUser(function(user, callback) {
-  User.find
-  callback(null, user.id);
+  callback(null, user._id);
 });
 passport.deserializeUser(function(id, callback) {
   User.findById(id, callback);
@@ -64,14 +67,47 @@ passport.deserializeUser(function(id, callback) {
 passport.use(new FacebookStrategy({
     clientID: conf.FB_APP_ID,
     clientSecret: conf.FB_APP_SECRET,
+    passReqToCallback: true,
     profileFields: ['id', 'displayName', 'gender', 'emails'],
     callbackURL: "http://localhost:9000/auth/facebook/callback"
   },
-  function(accessToken, refreshToken, profile, done) {
-    
-    return done(null, profile);
+  function(req, accessToken, refreshToken, profile, done) {
+    var user = req.user;
+    if (!user) {
+      return done(new Error('Not logged in'));
+    }
+
+    user.facebook = profile;
+    user.facebook.accessToken = accessToken;
+
+    User.findAndModify({ _id: user._id }, {}, user, { new: true }, function(err, user) {
+      if (err) {
+        return done(new Error('User does not exist'));
+      }
+      return done(null, user);
+    });
   })
 );
+
+// Local Strategy.
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+    User.findOne({ username: username }, function(err, user) {
+      if (err) {
+        return done(err);
+      } else if (!user) {
+        return done(null, false);
+      }
+      bcrypt.compare(password, user.hash, function(err, match) {
+        if (match) {
+          return done(null, user);
+        } else {
+          return done(new Error('Password does not match'));
+        }
+      });
+    });
+  }
+));
 
 app.get('/', function(req, res) {
   res.render('index', { user: req.user });
@@ -79,6 +115,52 @@ app.get('/', function(req, res) {
 
 app.get('/login', function(req, res) {
   res.render('login', { user: req.user });
+});
+
+app.post('/login', function(req, res, next) {
+  passport.authenticate('local', function(err, user, info) {
+    if (err) { return next(err) }
+    if (!user) {
+      return res.redirect('/login')
+    }
+    req.login(user, function(err) {
+      if (err) { return next(err); }
+      return res.redirect('/dashboard');
+    });
+  })(req, res, next);
+});
+
+// REGISTER
+app.post('/register', function(req, res) {
+  if (!req.body.username || !req.body.password) {
+    res.send({ err: 'Please enter a username and password.' });
+    return;
+  }
+  User.findOne({ username: req.body.username.toLowerCase() }, function(err, user) {
+    // TODO: fix res.sends
+    if (!user) {
+      bcrypt.genSalt(10, function(err, salt) {
+        bcrypt.hash(req.body.password, salt, function(err, hash) {
+          // Save new user to database.
+          User.insert({
+            username: req.body.username.toLowerCase(),
+            hash: hash,
+          }, {}, function(err, result) {
+            if (err) {
+              res.send({ err: 'Username is taken.' });
+            } else {
+              req.login(result[0], function(err) {
+                if (err) { console.log(err); }
+                res.redirect('/dashboard');
+              });
+            }
+          });
+        });
+      });
+    } else {
+      res.send({ err: 'Username is taken.' });
+    }
+  });
 });
 
 // Logged in pages
@@ -103,7 +185,8 @@ app.get('/auth/facebook',
 app.get('/auth/facebook/callback', 
   passport.authenticate('facebook', { failureRedirect: '/login' }),
   function(req, res) {
-    res.redirect('/');
+    // TODO: crazy fb graph api stuff.
+    res.redirect('/dashboard');
   }
 );
 
