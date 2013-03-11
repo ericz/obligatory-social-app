@@ -1,4 +1,4 @@
-# Unnamed Social App
+# Unnamed Social App, live @ http://contacts.michellebu.com
 
 ## Hackathon game plan
 
@@ -26,4 +26,3 @@
 ## Continued
 
 * Realtime Facebook subscriptions: http://developers.facebook.com/docs/howtos/managing-realtime-update-subscriptions/
-* Prototype live @ contacts.michellebu.com
