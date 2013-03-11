@@ -26,3 +26,4 @@
 ## Continued
 
 * Realtime Facebook subscriptions: http://developers.facebook.com/docs/howtos/managing-realtime-update-subscriptions/
+* Prototype live @ contacts.michellebu.com
